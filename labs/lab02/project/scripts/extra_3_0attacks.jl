@@ -1,0 +1,54 @@
+using DrWatson
+@quickactivate "project"
+using Distributions
+using Statistics
+using JLD2
+include(srcdir("simulation.jl"))
+
+params = Dict(
+    :λ => 5.0,
+    :T => 24.0,
+    :num_hours_for_est => 10000  # количество 8-часовых смен для оценки
+)
+
+function run_simulation(p)
+    @unpack λ, T, num_hours_for_est = p
+    
+    # Основная симуляция
+    res = simulate_attacks(λ, T)
+    
+    # Вероятность: ни одной атаки за смену (8 часов)
+    # Генерируем много 8-часовых интервалов
+    shift_counts = [sum(rand(Poisson(λ), 8)) for _ in 1:num_hours_for_est]
+    emp_prob = count(shift_counts .== 0) / num_hours_for_est
+    theor_prob = pdf(Poisson(λ * 8), 0)  # P(0 атак за 8 часов)
+    
+    return Dict(
+        :hourly_counts => res.hourly_counts,
+        :intervals => res.intervals,
+        :attack_times => res.attack_times,
+        :emp_prob => emp_prob,
+        :theor_prob => theor_prob
+    )
+end
+
+# Генерируем имя файла
+filename = datadir("attack_sim_0attacks", savename(params, "jld2"))
+mkpath(datadir("attack_sim_0attacks"))
+
+# Проверяем существование файла
+if isfile(filename)
+    println("Загрузка существующих данных из $filename")
+    data = load(filename)["data"]
+else
+    println("Запуск симуляции...")
+    data = run_simulation(params)
+    println("Сохраняем в файл...")
+    @save filename data
+    println("Результаты сохранены в $filename")
+end
+
+# Вывод результатов
+println("Вероятность: ни одной атаки за 8-часовую смену")
+println("Эмпирическая: ", data[:emp_prob])
+println("Теоретическая: ", data[:theor_prob])
