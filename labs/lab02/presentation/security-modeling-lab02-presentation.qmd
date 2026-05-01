@@ -11,8 +11,8 @@ author:
       city: Москва
       address: ул. Миклухо-Маклая, д. 6
 ## Title
-title: "Лабораторная работа №1"
-subtitle: "Основы литературного программирования"
+title: "Лабораторная работа №2"
+subtitle: "Основы вероятностного моделирования угроз"
 license: CC BY
 date: today
 date-format: "YYYY-MM-DD"
